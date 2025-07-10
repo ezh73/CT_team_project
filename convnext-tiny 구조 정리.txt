@@ -1,0 +1,51 @@
+발표용 정리
+
+1.입력 (224x224x3)
+CT 슬라이스 1채널 영상을 3채널로 확장하여 입력
+windowing, normalization, resize 후 모델에 전달
+
+2. Stem 
+Conv2d (3 → 96, kernel=4, stride=4)
+해상도: (224×224) → (56×56)
+초기 특징 추출 및 다운샘플링 수행, 출력: (56×56×96)
+
+3. 1Stage 1~4 + Downsample
+공통 Block 구조(ConvNeXt Block)
+DepthwiseConv2d(kernel=7, padding=3)
+LayerNorm
+PointwiseConv1(1×1) + GELU
+PointwiseConv2(1×1)
+Residual Connection
+Stage는 n개의 ConvNeXt Block로 구성됨
+
+3-1 Stage1 (n=3) 
+입력: (56×56×96)
+다운샘플링 → (28×28×192)
+특징 표현력 강화 및 채널 확장
+
+3-2 Stage 2 (n=3)
+입력: (28×28×192)
+다운샘플링 → (14×14×384)
+
+3-3 Stage 3 (n=9)
+입력: (14×14×384)
+다운샘플링 → (7×7×768)
+가장 많은 Block을 사용 (주요 표현 학습 구간)
+
+3-4 Stage 4 (n=3) 
+입력/출력 동일: (7×7×768)
+더 이상 다운샘플링 없이 고차원 특징 추출
+
+4. GAP & FC
+GAP (Global Average Pooling)
+(7×7×768) → (1×1×768) 
+
+5. Flatten & FC
+Linear(768 → 1)
+이진 분류를 위한 Logit 출력
+
+6. 출력
+Binary Logit
+sigmoid(logit)을 통해 0~1 사이 확률로 변환 → 양성/악성 판단
+	
+
